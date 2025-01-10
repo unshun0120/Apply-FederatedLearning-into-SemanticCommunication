@@ -2,6 +2,9 @@
 import torch
 import numpy as np
 import copy
+import pickle
+import time
+
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
@@ -12,16 +15,19 @@ from argument import args_parser
 from dataset import get_dataset
 from model import SemanticCommunicationSystem
 from local_model import LocalUpdate
+from utils import FedAvg, FedLol, exp_details, test_inference
 
 
 if __name__ == '__main__':
+    # use to measure total running time
+    start_time = time.time()
 
     # SummaryWriter : create an event file in a given directory and add summaries and events to it
     # log file / event file : typically used by software or operating systems to keep track of certain events that occur
     logger = SummaryWriter('../logs')
 
     args = args_parser()
-
+    exp_details(args)
     # use GPU or CPU
     if args.gpu:
         torch.cuda.set_device(int(args.gpu))
@@ -55,9 +61,11 @@ if __name__ == '__main__':
     cv_loss, cv_acc = [], []
     print_every = 2
     val_loss_pre = 0
+    curr_user = 0   # 目前第幾個edge device在跑
 
     for epoch in range(args.epochs): 
         local_weights, local_losses = [], []
+        curr_user = 0
 
         global_SCmodel.train()
 
@@ -71,10 +79,88 @@ if __name__ == '__main__':
         # defaulted m : 0.1 * 100 = 10
         m = max(int(args.frac * args.num_users), 1)
         # numpy.random.choice(a, size=None, replace=True, p=None): 會產生指定數量的一維陣列隨機整數
-        # a: 0～a的整數區間或其他的陣列資料, size: 輸出的陣列大小, replace: 隨機數是否重複(預設True), p: 陣列資料的機率分布(加總為 1)
+        # a: 0～a的整數區間或其他的陣列資料, size: 輸出的陣列大小, 
+        # replace: 隨機數是否重複(預設True), p: 陣列資料的機率分布(加總為 1)
         idxs_users = np.random.choice(range(args.num_users), m, replace=False)
         print('\nTotal number of edge devices are selected : '+ str(len(idxs_users)))
         print('Selected edge devices number : '+ str(idxs_users))
-
+        # local model training
         for idx in idxs_users: 
+            curr_user = curr_user + 1
             local_model = LocalUpdate(args=args, dataset=train_dataset, idxs=user_groups[idx], logger=logger)
+
+            # copy.deepcopy() : 完全複製了一份副本，兩者指向的memory address不一樣，
+            #                   Modify the deep copied object do not affect the original object
+            # copy.copy() : shallow copy, If you modify a the shallow copied object, 
+            #               the change will reflect in the original object because they share the same reference
+            w, loss = local_model.update_weights(curr_user, idx, model=copy.deepcopy(global_SCmodel), global_round=epoch)
+            # 把deepcopy()改成用 '=', global model和model的addr會相同，改的時候會一起改
+
+            local_weights.append(copy.deepcopy(w))
+            local_losses.append(copy.deepcopy(loss))
+
+        # update global weight
+        global_weights = FedAvg(local_weights)
+        #global_weights = FedLol(local_weights, local_losses)
+
+        # update global model
+        global_SCmodel.load_state_dict(global_weights)
+
+        loss_avg = sum(local_losses) / len(local_losses)
+        train_loss.append(loss_avg)
+        # Calculate avg training accuracy over all users at every epoch
+        list_acc, list_loss = [], []
+        # eval() : do not enable batch normalization and dropout
+        # 在輸入時若不做訓練仍然會改變權重, 這是因為model中有BN和dropout layer, eval()時會把BN跟dropout固定住
+        global_SCmodel.eval()
+        for c in range(args.num_users):
+            local_model = LocalUpdate(args=args, dataset=train_dataset,
+                                      idxs=user_groups[c], logger=logger)
+            acc, loss = local_model.inference(model=global_SCmodel)
+            list_acc.append(acc)
+            list_loss.append(loss)
+        train_accuracy.append(sum(list_acc)/len(list_acc))
+
+        # print global training loss after every 'i' rounds
+        if (epoch+1) % print_every == 0:
+            print(f' \nAvg Training Stats after {epoch+1} global rounds:')
+            print(f'Training Loss : {np.mean(np.array(train_loss))}')
+            print('Train Accuracy: {:.2f}% \n'.format(100*train_accuracy[-1]))
+
+    # Test inference after completion of training
+    test_acc, test_loss = test_inference(args, global_SCmodel, test_dataset)
+
+    print(f' \n Results after {args.epochs} global rounds of training:')
+    print("|---- Avg Train Accuracy: {:.2f}%".format(100*train_accuracy[-1]))
+    print("|---- Test Accuracy: {:.2f}%".format(100*test_acc))
+
+    # Saving the objects train_loss and train_accuracy:
+    file_name = './save/objects/{}_{}_{}_C[{}]_iid[{}]_E[{}]_B[{}].pkl'.\
+        format(args.dataset, args.epochs, args.frac, args.local_ep, args.local_bs)
+
+    with open(file_name, 'wb') as f:
+        pickle.dump([train_loss, train_accuracy], f)
+
+    print('\n Total Run Time: {0:0.4f}'.format(time.time()-start_time))
+
+    # PLOTTING (optional)
+    import matplotlib
+    import matplotlib.pyplot as plt
+
+    # Plot Loss curve
+    plt.figure()
+    plt.title('Training Loss vs Communication rounds')
+    plt.plot(range(len(train_loss)), train_loss, color='r')
+    plt.ylabel('Training loss')
+    plt.xlabel('Communication Rounds')
+    plt.savefig('./save/fed_{}_{}_{}_C[{}]_iid[{}]_E[{}]_B[{}]_loss.png'.
+                format(args.dataset, args.epochs, args.frac, args.local_ep, args.local_bs))
+    
+    # Plot Average Accuracy vs Communication rounds
+    plt.figure()
+    plt.title('Average Accuracy vs Communication rounds')
+    plt.plot(range(len(train_accuracy)), train_accuracy, color='k')
+    plt.ylabel('Average Accuracy')
+    plt.xlabel('Communication Rounds')
+    plt.savefig('./save/fed_{}_{}_{}_C[{}]_iid[{}]_E[{}]_B[{}]_acc.png'.
+                format(args.dataset, args.epochs, args.frac, args.local_ep, args.local_bs))

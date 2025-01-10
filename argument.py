@@ -29,9 +29,9 @@ def args_parser():
     # Fraction of selected edge devices
     parser.add_argument('--frac', type=float, default=0.1, help='the fraction of clients: C')
     # Local model epochs
-    parser.add_argument('--local_ep', type=int, default=10, help="the number of local epochs: E")
+    parser.add_argument('--local_ep', type=int, default=1, help="the number of local epochs: E")
     # Local model batch size
-    parser.add_argument('--local_bs', type=int, default=10, help="local batch size: B")
+    parser.add_argument('--local_bs', type=int, default=2, help="local batch size: B")
 
 
 

@@ -31,27 +31,18 @@ class SemanticCommunicationSystem(nn.Module):  # pure DeepSC
         # semantic encoder
         #code = self.encoder(embeddingVector)
         code = self.encoder(inputs, snr)
-        print('1111')
         # channel encoder
         denseCode = self.denseEncoder1(code)
-        print('2222')
         codeSent = self.denseEncoder2(denseCode)
-        print('3333')
         # AWGN channel 
         #codeWithNoise = AWGN_channel(codeSent, 12)  # assuming snr = 12db
         codeWithNoise = Channel_VLC(codeSent, snr, cr, channel_type)
-        print('4444')
         # channel decoder
         codeReceived = self.denseDecoder1(codeWithNoise)
-        print('5555')
         codeReceived = self.denseDecoder2(codeReceived)
-        print('6666')
-        print(codeReceived.size())
         # semantic decoder
         codeSemantic = self.decoder(codeReceived, snr)
-        print('7777')
         codeSemantic = self.prediction(codeSemantic)
-        print('8888')
         info = self.softmax(codeSemantic)
         
         #return info

@@ -23,7 +23,6 @@ class Decoder(nn.Module):
         self.AF4 = AF_block(Nc_deconv, Nh_AF, Nc_deconv)
         self.AF5 = AF_block(Nc_deconv, Nh_AF, Nc_deconv)
     def forward(self, x, snr):  
-        print(self.enc_shape)
         out = x.view(-1, self.enc_shape[0], self.enc_shape[1], self.enc_shape[2])
         out = self.AF1(out, snr)
         out = self.deconv1(out) 
