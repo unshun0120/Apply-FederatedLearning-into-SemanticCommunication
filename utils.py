@@ -2,7 +2,8 @@ import copy
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 
 def FedAvg(w):
@@ -70,9 +71,9 @@ def test_inference(args, model, test_dataset):
 
     device = 'cuda' if args.gpu else 'cpu'
     criterion = nn.MSELoss().to(device)
-    testloader = DataLoader(test_dataset, batch_size=128, shuffle=False)
+    testloader = DataLoader(test_dataset, batch_size=32, shuffle=False)
 
-    for batch_idx, (images, labels) in enumerate(testloader):
+    for batch_idx, (images, labels) in enumerate(tqdm(testloader, colour="blue")):
         images, labels = images.to(device), labels.to(device)
 
         # Inference
@@ -113,8 +114,7 @@ def test_inference(args, model, test_dataset):
         correct = torch.eq(predicted_labels, true_labels)  # [2, 32, 32] 的布林值張量
         correct_count += correct.sum().item()
         total_count += correct.numel()
-        accuracy = correct_count / total_count
-        print(f"Accuracy: {accuracy:.2%}")
+        #accuracy = correct_count / total_count
 
     accuracy = correct_count/total_count
     print(accuracy)

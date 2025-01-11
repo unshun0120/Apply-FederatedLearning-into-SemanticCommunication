@@ -56,10 +56,10 @@ class LocalUpdate(object):
             optimizer = torch.optim.Adam(model.parameters(), lr=self.args.lr, weight_decay=1e-4)
         elif self.args.optimizer == 'SGD':
             optimizer = torch.optim.SGD(model.parameters(), lr=self.args.lr, momentum=0.5)
-        print('Global Round: {} | {}-th edeg device | Local model ID: {}'.format(global_round, curr_user, user_idx))
+        print('\nGlobal Round: {} | {}-th edeg device | Local model ID: {}'.format(global_round+1, curr_user, user_idx))
         for local_epoch in range(self.args.local_ep):
             batch_loss = []
-            for batch_idx, (images, labels) in enumerate(tqdm(self.trainloader)):
+            for batch_idx, (images, labels) in enumerate(tqdm(self.trainloader, desc="Local Round {} ...".format(local_epoch+1))):
                 images, labels = images.to(self.device), labels.to(self.device)
 
                 # model.zero_grad() and optimizer.zero_grad() are the same if all model parameters are in that optimizer
@@ -141,10 +141,10 @@ class LocalUpdate(object):
             correct = torch.eq(predicted_labels, true_labels)  # [2, 32, 32] 的布林值張量
             correct_count += correct.sum().item()
             total_count += correct.numel()
-            accuracy = correct_count / total_count
+            #accuracy = correct_count / total_count
             #print(f"idx {idx} -> Accuracy: {accuracy:.2%}")
 
         accuracy = correct_count/total_count
-        print(accuracy)
+        #print(accuracy)
         return accuracy, loss
     

@@ -113,7 +113,8 @@ if __name__ == '__main__':
         # 在輸入時若不做訓練仍然會改變權重, 這是因為model中有BN和dropout layer, eval()時會把BN跟dropout固定住
         global_SCmodel.eval()
         
-        for c in range(args.num_users):
+        print('\nGlobal Round: {} - Local model inference ...'.format(epoch+1))
+        for c in tqdm(range(args.num_users), colour="yellow"):
             local_model = LocalUpdate(args=args, dataset=train_dataset,
                                       idxs=user_groups[c], logger=logger)
             acc, loss = local_model.inference(c, model=global_SCmodel)
