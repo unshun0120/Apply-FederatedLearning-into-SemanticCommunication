@@ -98,9 +98,11 @@ if __name__ == '__main__':
             local_weights.append(copy.deepcopy(w))
             local_losses.append(copy.deepcopy(loss))
 
-        # update global weight
-        global_weights = FedAvg(local_weights)
-        #global_weights = FedLol(local_weights, local_losses)
+        # update global weight strategy
+        # Federated Average
+        #global_weights = FedAvg(local_weights)
+        # Federated Local Loss
+        global_weights = FedLol(local_weights, local_losses)
 
         # update global model
         global_SCmodel.load_state_dict(global_weights)
@@ -120,6 +122,7 @@ if __name__ == '__main__':
             acc, loss = local_model.inference(c, model=global_SCmodel)
             list_acc.append(acc)
             list_loss.append(loss)
+            
         train_accuracy.append(sum(list_acc)/len(list_acc))
         # print global training loss after every 'i' rounds
         #if (epoch+1) % print_every == 0:
