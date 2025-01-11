@@ -2,39 +2,28 @@ import torch.nn as nn
 from GDN import GDN
 from model_layer import AF_block
 
+# semantic decoder通常使用反卷積或 U-Net 結構還原圖像
+# torch.nn.ConvTranspose2d(): 反卷積, 卷積是把A變成B, 反卷積則是把B變成A
 def deconv(in_channels, out_channels, kernel_size=3, stride=1, padding=1, output_padding = 0):
     return nn.ConvTranspose2d(in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=padding, output_padding = output_padding,bias=False)
 
 class Decoder(nn.Module):
     def __init__(self, enc_shape, kernel_sz, Nc_deconv):
         super(Decoder, self).__init__()
-        self.enc_shape = enc_shape
-        Nh_AF1 = enc_shape[0]//2
-        Nh_AF = Nc_deconv//2
-        padding_L = (kernel_sz-1)//2
-        self.deconv1 = deconv_ResBlock(self.enc_shape[0], Nc_deconv, use_deconv1x1=True, kernel_size = kernel_sz, stride = 2,  padding=padding_L, output_padding = 1)
-        self.deconv2 = deconv_ResBlock(Nc_deconv, Nc_deconv, use_deconv1x1=True, kernel_size = kernel_sz, stride = 2,  padding=padding_L, output_padding = 1)
-        self.deconv3 = deconv_ResBlock(Nc_deconv, Nc_deconv, kernel_size=kernel_sz, stride=1, padding=padding_L)
-        self.deconv4 = deconv_ResBlock(Nc_deconv, Nc_deconv, kernel_size=kernel_sz, stride=1, padding=padding_L)
-        self.deconv5 = deconv_ResBlock(Nc_deconv, 3, use_deconv1x1=True, kernel_size=kernel_sz, stride=1, padding=padding_L)
-        self.AF1 = AF_block(self.enc_shape[0], Nh_AF1, self.enc_shape[0])
-        self.AF2 = AF_block(Nc_deconv, Nh_AF, Nc_deconv)
-        self.AF3 = AF_block(Nc_deconv, Nh_AF, Nc_deconv)
-        self.AF4 = AF_block(Nc_deconv, Nh_AF, Nc_deconv)
-        self.AF5 = AF_block(Nc_deconv, Nh_AF, Nc_deconv)
+        self.decoder = nn.Sequential( 
+            nn.ConvTranspose2d(256, 128, kernel_size=3, stride=2, padding=1, output_padding=1), 
+            nn.ReLU(), 
+            
+            nn.ConvTranspose2d(128, 64, kernel_size=3, stride=2, padding=1, output_padding=1), 
+            nn.ReLU(), 
+
+            nn.ConvTranspose2d(64, 3, kernel_size=3, stride=2, padding=1, output_padding=1), 
+            nn.Sigmoid() 
+        )
     def forward(self, x, snr):  
-        out = x.view(-1, self.enc_shape[0], self.enc_shape[1], self.enc_shape[2])
-        out = self.AF1(out, snr)
-        out = self.deconv1(out) 
-        out = self.AF2(out, snr)
-        out = self.deconv2(out) 
-        out = self.AF3(out, snr)
-        out = self.deconv3(out)
-        out = self.AF4(out, snr)
-        out = self.deconv4(out)
-        out = self.AF5(out, snr)
-        out = self.deconv5(out, 'sigmoid')  
-        return out
+        x = x.view(x.size(0), 256, 4, 4) 
+        x = self.decoder(x) 
+        return x
 
 # deconv_ResBlock 
 class deconv_ResBlock(nn.Module):

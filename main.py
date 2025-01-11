@@ -23,7 +23,7 @@ if __name__ == '__main__':
     start_time = time.time()
 
     # SummaryWriter : create an event file in a given directory and add summaries and events to it
-    # log file / event file : typically used by software or operating systems to keep track of certain events that occur
+    # log file / event file : 紀錄一般訊息, typically used by software or operating systems to keep track of certain events that occur
     logger = SummaryWriter('../logs')
 
     args = args_parser()
