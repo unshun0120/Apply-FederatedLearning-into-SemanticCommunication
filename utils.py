@@ -42,14 +42,22 @@ def FedLol(w, l):
 
 def exp_details(args):
     print('\nExperimental details:')
+    if args.gpu : 
+        print(f'    Device : GPU')
+    else : 
+        print(f'    Device : CPU')
+    print(f'    Dataset : {args.dataset}')
     print(f'    Optimizer : {args.optimizer}')
-    print(f'    Learning  : {args.lr}')
-    print(f'    Global Rounds   : {args.epochs}\n')
+    print(f'    Learning rate  : {args.lr}')
 
     print('    Federated parameters:')
-    print(f'    Fraction of users  : {args.frac}')
+    print(f'    Global Rounds   : {args.global_ep}')
+    print(f'    Local Epochs       : {args.local_ep}')
     print(f'    Local Batch size   : {args.local_bs}')
-    print(f'    Local Epochs       : {args.local_ep}\n')
+    print(f'    Number of users   : {args.num_users}')
+    print(f'    Fraction of users  : {args.frac}\n')
+    
+    
     return
 
 def test_inference(args, model, test_dataset):

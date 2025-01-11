@@ -32,10 +32,9 @@ if __name__ == '__main__':
     if args.gpu:
         torch.cuda.set_device(int(args.gpu))
     device = 'cuda' if args.gpu else 'cpu'
-    print('Using ' + device + '!!!\n')
 
     # Load dataset
-    print('Loading ' + args.dataset + ' dataset ...')
+    print('Loading ' + args.dataset + ' dataset ...\n')
     train_dataset, test_dataset, user_groups = get_dataset(args)
 
     # Semantic Communication model
@@ -63,7 +62,7 @@ if __name__ == '__main__':
     val_loss_pre = 0
     curr_user = 0   # 目前第幾個edge device在跑
 
-    for epoch in range(args.epochs): 
+    for epoch in range(args.global_ep): 
         local_weights, local_losses = [], []
         curr_user = 0
 
@@ -82,8 +81,8 @@ if __name__ == '__main__':
         # a: 0～a的整數區間或其他的陣列資料, size: 輸出的陣列大小, 
         # replace: 隨機數是否重複(預設True), p: 陣列資料的機率分布(加總為 1)
         idxs_users = np.random.choice(range(args.num_users), m, replace=False)
-        print('\nTotal number of edge devices are selected : '+ str(len(idxs_users)))
-        print('Selected edge devices number : '+ str(idxs_users))
+        #print('\nTotal number of edge devices are selected : '+ str(len(idxs_users)))
+        #print('Selected edge devices number : '+ str(idxs_users))
         # local model training
         for idx in idxs_users: 
             curr_user = curr_user + 1
@@ -130,21 +129,20 @@ if __name__ == '__main__':
     # Test inference after completion of training
     test_acc, test_loss = test_inference(args, global_SCmodel, test_dataset)
 
-    print(f' \n Results after {args.epochs} global rounds of training:')
+    print(f' \n Results after {args.global_ep} global rounds of training:')
     print("|---- Avg Train Accuracy: {:.2f}%".format(100*train_accuracy[0]))
     print("|---- Test Accuracy: {:.2f}%".format(100*test_acc))
 
     # Saving the objects train_loss and train_accuracy:
     file_name = '../save/objects/{}_{}_{}_E[{}]_B[{}].pkl'.\
-        format(args.dataset, args.epochs, args.frac, args.local_ep, args.local_bs)
+        format(args.dataset, args.global_ep, args.frac, args.local_ep, args.local_bs)
 
     with open(file_name, 'wb') as f:
         pickle.dump([train_loss, train_accuracy], f)
 
     print('\n Total Run Time: {0:0.4f}'.format(time.time()-start_time))
 
-    # PLOTTING (optional)
-    import matplotlib
+    # PLOTTING 畫圖
     import matplotlib.pyplot as plt
 
     # Plot Loss curve
@@ -154,7 +152,7 @@ if __name__ == '__main__':
     plt.ylabel('Training loss')
     plt.xlabel('Communication Rounds')
     plt.savefig('../save/fed_{}_{}_{}_E[{}]_B[{}]_loss.png'.
-                format(args.dataset, args.epochs, args.frac, args.local_ep, args.local_bs))
+                format(args.dataset, args.global_ep, args.frac, args.local_ep, args.local_bs))
     
     # Plot Average Accuracy vs Communication rounds
     plt.figure()
@@ -163,4 +161,4 @@ if __name__ == '__main__':
     plt.ylabel('Average Accuracy')
     plt.xlabel('Communication Rounds')
     plt.savefig('../save/fed_{}_{}_{}_C[{}]_B[{}]_acc.png'.
-                format(args.dataset, args.epochs, args.frac, args.local_ep, args.local_bs))
+                format(args.dataset, args.global_ep, args.frac, args.local_ep, args.local_bs))

@@ -2,6 +2,7 @@ import torch
 from torch import nn
 from torch.utils.data import DataLoader, Dataset
 import torch.nn.functional as F
+from tqdm import tqdm
 
 class DatasetSplit(Dataset):
     """
@@ -34,17 +35,14 @@ class LocalUpdate(object):
         Returns train, validation and test dataloaders for a given dataset
         and user indexes.
         """
-        # split indexes for train, validation, and test (80, 10, 10)
+        # split indexes for train, validation, and test (80%, 10%, 10%)
         idxs_train = idxs[:int(0.8*len(idxs))]
         idxs_val = idxs[int(0.8*len(idxs)):int(0.9*len(idxs))]
         idxs_test = idxs[int(0.9*len(idxs)):]
         
-        trainloader = DataLoader(DatasetSplit(dataset, idxs_train),
-                                 batch_size=self.args.local_bs, shuffle=True)
-        validloader = DataLoader(DatasetSplit(dataset, idxs_val),
-                                 batch_size=int(len(idxs_val)/10), shuffle=False)
-        testloader = DataLoader(DatasetSplit(dataset, idxs_test),
-                                batch_size=int(len(idxs_test)/10), shuffle=False)
+        trainloader = DataLoader(DatasetSplit(dataset, idxs_train), batch_size=self.args.local_bs, shuffle=True)
+        validloader = DataLoader(DatasetSplit(dataset, idxs_val), batch_size=int(len(idxs_val)/10), shuffle=False)
+        testloader = DataLoader(DatasetSplit(dataset, idxs_test), batch_size=int(len(idxs_test)/10), shuffle=False)
         
         return trainloader, validloader, testloader
 
@@ -58,10 +56,10 @@ class LocalUpdate(object):
             optimizer = torch.optim.Adam(model.parameters(), lr=self.args.lr, weight_decay=1e-4)
         elif self.args.optimizer == 'SGD':
             optimizer = torch.optim.SGD(model.parameters(), lr=self.args.lr, momentum=0.5)
-
+        print('Global Round: {} | {}-th edeg device | Local model ID: {}'.format(global_round, curr_user, user_idx))
         for local_epoch in range(self.args.local_ep):
             batch_loss = []
-            for batch_idx, (images, labels) in enumerate(self.trainloader):
+            for batch_idx, (images, labels) in enumerate(tqdm(self.trainloader)):
                 images, labels = images.to(self.device), labels.to(self.device)
 
                 # model.zero_grad() and optimizer.zero_grad() are the same if all model parameters are in that optimizer
@@ -81,15 +79,17 @@ class LocalUpdate(object):
                 
                 # verbose : 是否要顯示進度條, 預設1
                 # verbose = 0 : 不輸出進度條、loss、acc, verbose = 1 : 輸出進度條、loss、acc, verbose = 2 : 輸出loss、acc但不輸出進度條
+                """
                 if self.args.verbose and (batch_idx % 10 == 0):
                     print('| Global Round : {} | {}-th Local Model {} Epoch : {} | Batch Index : {} | [{}/{} ({:.0f}%)]  Loss: {:.6f}'.format(
                         global_round, curr_user, user_idx, local_epoch, batch_idx, batch_idx * len(images),
                         len(self.trainloader.dataset),
                         100. * batch_idx / len(self.trainloader), loss.item()))
+                """
                 self.logger.add_scalar('loss', loss.item())
                 batch_loss.append(loss.item())
             epoch_loss.append(sum(batch_loss)/len(batch_loss))
-        print() # 讓畫面好看XD
+        #print() # 讓畫面好看XD
 
         return model.state_dict(), sum(epoch_loss) / len(epoch_loss)
 

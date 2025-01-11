@@ -23,7 +23,7 @@ def args_parser():
 
     # Federated Learning setup 
     # Epochs
-    parser.add_argument('--epochs', type=int, default=1, help="number of training rounds")
+    parser.add_argument('--global_ep', type=int, default=1, help="number of global model training rounds (epochs)")
     # number of edge devices (i.e. users, clients)
     parser.add_argument('--num_users', type=int, default=100, help="number of edge devices (users): K")
     # Fraction of selected edge devices

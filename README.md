@@ -10,7 +10,7 @@ this project is based on :
 + https://github.com/wyzhang-ustb/Predictive-and-Adaptive-Deep-Coding-for-Wireless-Image-Transmission-in-Semantic-Communication   
 
 ---
-1. Create a new folder called <font color="blue">**"Dataset"**</font> outside the downloaded folder
-2. Create a new folder called <font color="blue">**"logs"**</font> outside the downloaded folder
-3. Create a new folder called <font color="blue">**"save"**</font> outside the downloaded folder
-4. Create a new folder called <font color="blue">**"objects"**</font> outside the <font color="blue">"save"</font> folder
+1. Create a new folder called **"Dataset"** outside the downloaded folder
+2. Create a new folder called **"logs"** outside the downloaded folder
+3. Create a new folder called **"save"** outside the downloaded folder
+4. Create a new folder called **"objects"** outside the **"save"** folder
