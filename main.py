@@ -113,29 +113,29 @@ if __name__ == '__main__':
         # eval() : do not enable batch normalization and dropout
         # 在輸入時若不做訓練仍然會改變權重, 這是因為model中有BN和dropout layer, eval()時會把BN跟dropout固定住
         global_SCmodel.eval()
+        
         for c in range(args.num_users):
             local_model = LocalUpdate(args=args, dataset=train_dataset,
                                       idxs=user_groups[c], logger=logger)
-            acc, loss = local_model.inference(model=global_SCmodel)
+            acc, loss = local_model.inference(c, model=global_SCmodel)
             list_acc.append(acc)
             list_loss.append(loss)
         train_accuracy.append(sum(list_acc)/len(list_acc))
-
         # print global training loss after every 'i' rounds
-        if (epoch+1) % print_every == 0:
-            print(f' \nAvg Training Stats after {epoch+1} global rounds:')
-            print(f'Training Loss : {np.mean(np.array(train_loss))}')
-            print('Train Accuracy: {:.2f}% \n'.format(100*train_accuracy[-1]))
-
+        #if (epoch+1) % print_every == 0:
+        print(f' \nAvg Training Stats after {epoch+1} global rounds:')
+        print(f'Training Loss : {np.mean(np.array(train_loss))}')
+        print('Train Accuracy: {:.2f}% \n'.format(100*train_accuracy[0]))
+    
     # Test inference after completion of training
     test_acc, test_loss = test_inference(args, global_SCmodel, test_dataset)
 
     print(f' \n Results after {args.epochs} global rounds of training:')
-    print("|---- Avg Train Accuracy: {:.2f}%".format(100*train_accuracy[-1]))
+    print("|---- Avg Train Accuracy: {:.2f}%".format(100*train_accuracy[0]))
     print("|---- Test Accuracy: {:.2f}%".format(100*test_acc))
 
     # Saving the objects train_loss and train_accuracy:
-    file_name = './save/objects/{}_{}_{}_C[{}]_iid[{}]_E[{}]_B[{}].pkl'.\
+    file_name = '../save/objects/{}_{}_{}_E[{}]_B[{}].pkl'.\
         format(args.dataset, args.epochs, args.frac, args.local_ep, args.local_bs)
 
     with open(file_name, 'wb') as f:
@@ -153,7 +153,7 @@ if __name__ == '__main__':
     plt.plot(range(len(train_loss)), train_loss, color='r')
     plt.ylabel('Training loss')
     plt.xlabel('Communication Rounds')
-    plt.savefig('./save/fed_{}_{}_{}_C[{}]_iid[{}]_E[{}]_B[{}]_loss.png'.
+    plt.savefig('../save/fed_{}_{}_{}_E[{}]_B[{}]_loss.png'.
                 format(args.dataset, args.epochs, args.frac, args.local_ep, args.local_bs))
     
     # Plot Average Accuracy vs Communication rounds
@@ -162,5 +162,5 @@ if __name__ == '__main__':
     plt.plot(range(len(train_accuracy)), train_accuracy, color='k')
     plt.ylabel('Average Accuracy')
     plt.xlabel('Communication Rounds')
-    plt.savefig('./save/fed_{}_{}_{}_C[{}]_iid[{}]_E[{}]_B[{}]_acc.png'.
+    plt.savefig('../save/fed_{}_{}_{}_C[{}]_B[{}]_acc.png'.
                 format(args.dataset, args.epochs, args.frac, args.local_ep, args.local_bs))

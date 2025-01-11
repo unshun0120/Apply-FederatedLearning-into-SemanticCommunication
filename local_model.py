@@ -71,11 +71,9 @@ class LocalUpdate(object):
                 SNR_TRAIN = torch.randint(0, 28, (images.shape[0], 1)).cuda()
                 CR = 0.1+0.9*torch.rand(images.shape[0], 1).cuda()
                 s_predicted, s_origin= model(images, SNR_TRAIN, CR, CHANNEL)
-
                 # 計算loss時, predicted和origin的shape要相同, 用填充(padding)的方式讓s_origin和s_predicted相同
                 padding = (0, s_predicted.shape[3] - s_origin.shape[3])  # 只在最後一維填充
                 s_origin = F.pad(s_origin, padding)
-
                 # get loss value
                 loss = self.criterion(s_predicted, s_origin)
                 loss.backward()
@@ -95,17 +93,17 @@ class LocalUpdate(object):
 
         return model.state_dict(), sum(epoch_loss) / len(epoch_loss)
 
-    def inference(self, model):
+    def inference(self, idx, model):
         """ 
         Returns the inference accuracy and loss.
         """
 
         model.eval()
         loss, total, correct = 0.0, 0.0, 0.0
+        total_count, correct_count = 0.0, 0.0
 
         for batch_idx, (images, labels) in enumerate(self.testloader):
             images, labels = images.to(self.device), labels.to(self.device)
-            print(labels)
             # Inference
             CHANNEL = 'AWGN' 
             SNR_TRAIN = torch.randint(0, 28, (images.shape[0], 1)).cuda()
@@ -113,22 +111,40 @@ class LocalUpdate(object):
             s_predicted, s_origin= model(images, SNR_TRAIN, CR, CHANNEL)
 
             # 計算loss時, predicted和origin的shape要相同, 用填充(padding)的方式讓s_origin和s_predicted相同
-            padding = (0, s_predicted.shape[3] - s_origin.shape[3])  # 只在最後一維填充
-            s_origin = F.pad(s_origin, padding)
+            padding = (0, s_predicted.shape[3] - images.shape[3])  # 只在最後一維填充
+            images = F.pad(images, padding)
 
-            batch_loss = self.criterion(s_predicted, s_origin)
+            batch_loss = self.criterion(s_predicted, images)
             loss += batch_loss.item()
 
             # Prediction
+            """
             _, pred_labels = torch.max(s_predicted, 0)
-            print(pred_labels.size())
-            print(labels.size())
             pred_labels = pred_labels.view(-1)
-            print(pred_labels.size())
-            print(labels.size())
             correct += torch.sum(torch.eq(pred_labels, labels)).item()
             total += len(labels)
+            """
+            # 假設 s_predicted 和 s_origin 已經從模型輸出
+            # s_predicted: [2, 3, 32, 35632]
+            # s_origin: [2, 3, 32, 32]
 
-        accuracy = correct/total
+            # 提取預測類別
+            predicted_labels = torch.argmax(s_predicted, dim=1)  # [2, 32, 35632]
+
+            # 提取真實類別
+            true_labels = torch.argmax(images, dim=1)  # 假設 s_origin 是 one-hot，形狀為 [2, 32, 32]
+
+            # 匹配形狀
+            predicted_labels = predicted_labels[:, :, :true_labels.size(2)]  # 確保形狀一致
+
+            # 計算準確率
+            correct = torch.eq(predicted_labels, true_labels)  # [2, 32, 32] 的布林值張量
+            correct_count += correct.sum().item()
+            total_count += correct.numel()
+            accuracy = correct_count / total_count
+            #print(f"idx {idx} -> Accuracy: {accuracy:.2%}")
+
+        accuracy = correct_count/total_count
+        print(accuracy)
         return accuracy, loss
     

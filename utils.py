@@ -55,9 +55,10 @@ def exp_details(args):
 def test_inference(args, model, test_dataset):
     """ Returns the test accuracy and loss.
     """
-
+    torch.cuda.empty_cache()
     model.eval()
     loss, total, correct = 0.0, 0.0, 0.0
+    total_count, correct_count = 0.0, 0.0
 
     device = 'cuda' if args.gpu else 'cpu'
     criterion = nn.MSELoss().to(device)
@@ -80,12 +81,37 @@ def test_inference(args, model, test_dataset):
         loss += batch_loss.item()
 
         # Prediction
-        """ 
+        """
         _, pred_labels = torch.max(s_predicted, 1)
         pred_labels = pred_labels.view(-1)
-        """ 
+        
         correct += torch.sum(torch.eq(s_predicted, s_origin)).item()
         total += len(s_origin)
+        """
+        # 假設 s_predicted 和 s_origin 已經從模型輸出
+        # s_predicted: [2, 3, 32, 35632]
+        # s_origin: [2, 3, 32, 32]
 
-    accuracy = correct/total
+        # 提取預測類別
+        predicted_labels = torch.argmax(s_predicted, dim=1)  # [2, 32, 35632]
+
+        # 提取真實類別
+        true_labels = torch.argmax(images, dim=1)  # 假設 s_origin 是 one-hot，形狀為 [2, 32, 32]
+
+        # 匹配形狀
+        predicted_labels = predicted_labels[:, :, :true_labels.size(2)]  # 確保形狀一致
+
+        # 計算準確率
+        correct = torch.eq(predicted_labels, true_labels)  # [2, 32, 32] 的布林值張量
+        correct_count += correct.sum().item()
+        total_count += correct.numel()
+        accuracy = correct_count / total_count
+        print(f"Accuracy: {accuracy:.2%}")
+
+    accuracy = correct_count/total_count
+    print(accuracy)
     return accuracy, loss
+    
+
+
+
