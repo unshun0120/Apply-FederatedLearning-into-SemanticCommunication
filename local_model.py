@@ -122,7 +122,7 @@ class LocalUpdate(object):
                 correct += torch.sum(torch.eq(pred_labels, labels)).item()
                 total += len(labels)
                 """
-                # 假設 s_predicted 和 s_origin 已經從模型輸出
+                # 假設 s_predicted, s_origin樣子是
                 # s_predicted: [2, 3, 32, 35632]
                 # s_origin: [2, 3, 32, 32]
 
