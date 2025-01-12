@@ -1,8 +1,5 @@
 import torch.nn as nn
-from semantic_encoder import Encoder
-from channel_en_decoder import dense
-from model_layer import Channel_VLC
-from semantic_decoder import Decoder
+from model_layer import Encoder, dense, AWGN_channel, Decoder
 
 
 class SemanticCommunicationSystem(nn.Module):  # pure DeepSC
@@ -29,16 +26,13 @@ class SemanticCommunicationSystem(nn.Module):  # pure DeepSC
         self.softmax = nn.Softmax(dim=2)  # dim=2 means that it calculates softmax in the feature dimension
 
     def forward(self, inputs, snr, cr, channel_type = 'AWGN'):
-        #embeddingVector = self.embedding(inputs)
         # semantic encoder
-        #code = self.encoder(embeddingVector)
         code = self.encoder(inputs)
         # channel encoder
         denseCode = self.denseEncoder1(code)
         codeSent = self.denseEncoder2(denseCode)
         # AWGN channel 
-        #codeWithNoise = AWGN_channel(codeSent, 12)  # assuming snr = 12db
-        codeWithNoise = Channel_VLC(codeSent, snr, cr, channel_type)
+        codeWithNoise = AWGN_channel(codeSent, snr)  # assuming snr = 12db
         # channel decoder
         codeReceived = self.denseDecoder1(codeWithNoise)
         codeReceived = self.denseDecoder2(codeReceived)
