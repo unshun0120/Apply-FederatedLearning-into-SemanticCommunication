@@ -8,10 +8,12 @@ from semantic_decoder import Decoder
 class SemanticCommunicationSystem(nn.Module):  # pure DeepSC
     def __init__(self, enc_shape, Kernel_sz, Nc):
         super(SemanticCommunicationSystem, self).__init__()
+        # model parameter
+        semantic_feature_dim = 128
         #self.embedding = embedding(35632, 128)  # which means the corpus has 35632 kinds of words and
         # each word will be coded with a 128 dimensions vector
         # semantic encoder
-        self.encoder = Encoder(enc_shape, Kernel_sz, Nc)
+        self.encoder = Encoder(output_dim=semantic_feature_dim)
         # channel encoder
         self.denseEncoder1 = dense(128, 256)
         self.denseEncoder2 = dense(256, 16)
@@ -21,7 +23,7 @@ class SemanticCommunicationSystem(nn.Module):  # pure DeepSC
         # semantic decoder
         # TransformerDecoderLayer: made up of self-attn, multi-head-attn and feedforward network
         # TransformerDecoder: a stack of N decoder layers.
-        self.decoder = Decoder(enc_shape, Kernel_sz, Nc) 
+        self.decoder = Decoder(input_dim=semantic_feature_dim) 
 
         self.prediction = nn.Linear(32, 35632)
         self.softmax = nn.Softmax(dim=2)  # dim=2 means that it calculates softmax in the feature dimension
@@ -30,7 +32,7 @@ class SemanticCommunicationSystem(nn.Module):  # pure DeepSC
         #embeddingVector = self.embedding(inputs)
         # semantic encoder
         #code = self.encoder(embeddingVector)
-        code = self.encoder(inputs, snr)
+        code = self.encoder(inputs)
         # channel encoder
         denseCode = self.denseEncoder1(code)
         codeSent = self.denseEncoder2(denseCode)
@@ -41,7 +43,7 @@ class SemanticCommunicationSystem(nn.Module):  # pure DeepSC
         codeReceived = self.denseDecoder1(codeWithNoise)
         codeReceived = self.denseDecoder2(codeReceived)
         # semantic decoder
-        codeSemantic = self.decoder(codeReceived, snr)
+        codeSemantic = self.decoder(codeReceived)
         codeSemantic = self.prediction(codeSemantic)
         info = self.softmax(codeSemantic)
         

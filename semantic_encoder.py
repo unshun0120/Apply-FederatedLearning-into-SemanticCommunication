@@ -9,9 +9,9 @@ def conv(in_channels, out_channels, kernel_size=3, stride=1, padding=1):
 
 # The Encoder model with attention feature blocks
 class Encoder(nn.Module):
-    def __init__(self, output_dim=256):
+    def __init__(self, output_dim):
         super(Encoder, self).__init__()    
-        self.cnn = nn.Sequential( 
+        self.encoder = nn.Sequential( 
             # 3: 輸入channel數，CIFAR10的圖片是RGB，所以channel數=3
             # 64: 輸出的channel數，也就是卷積過後的特徵圖數量，這裡使用了64個filter來捕捉不同的特徵
             # kernel_size=3: filter通常使用的大小是3×3，所以kernel size=3，能夠有效捕捉小範圍的特徵
@@ -39,7 +39,7 @@ class Encoder(nn.Module):
             nn.MaxPool2d(kernel_size=2, stride=2, padding=0) 
         ) 
         # Fully connected layer to project features to the semantic space
-        self.fc = self.fc = nn.Linear(256, output_dim)
+        self.fc = nn.Linear(4096, output_dim)
 
     def forward(self, x):    
         x = self.encoder(x)

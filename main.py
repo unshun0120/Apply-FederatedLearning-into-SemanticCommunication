@@ -100,9 +100,9 @@ if __name__ == '__main__':
 
         # update global weight strategy
         # Federated Average
-        #global_weights = FedAvg(local_weights)
+        global_weights = FedAvg(local_weights)
         # Federated Local Loss
-        global_weights = FedLol(local_weights, local_losses)
+        #global_weights = FedLol(local_weights, local_losses)
 
         # update global model
         global_SCmodel.load_state_dict(global_weights)

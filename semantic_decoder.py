@@ -8,21 +8,30 @@ def deconv(in_channels, out_channels, kernel_size=3, stride=1, padding=1, output
     return nn.ConvTranspose2d(in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=padding, output_padding = output_padding,bias=False)
 
 class Decoder(nn.Module):
-    def __init__(self, enc_shape, kernel_sz, Nc_deconv):
+    def __init__(self, input_dim):
         super(Decoder, self).__init__()
-        self.decoder = nn.Sequential( 
-            nn.ConvTranspose2d(256, 128, kernel_size=3, stride=2, padding=1, output_padding=1), 
-            nn.ReLU(), 
-            
-            nn.ConvTranspose2d(128, 64, kernel_size=3, stride=2, padding=1, output_padding=1), 
-            nn.ReLU(), 
-
-            nn.ConvTranspose2d(64, 3, kernel_size=3, stride=2, padding=1, output_padding=1), 
-            nn.Sigmoid() 
+        
+        self.fc = nn.Sequential(
+            nn.Linear(input_dim, 512),
+            nn.ReLU(),
+            nn.Linear(512, 8 * 8 * 64),
+            nn.ReLU()
         )
-    def forward(self, x, snr):  
-        x = x.view(x.size(0), 256, 4, 4) 
-        x = self.decoder(x) 
+        
+        self.decoder = nn.Sequential(
+            nn.ConvTranspose2d(64, 64, kernel_size=3, stride=2, padding=1, output_padding=1),  # 8x8 -> 16x16
+            nn.BatchNorm2d(64),
+            nn.ReLU(),
+            nn.ConvTranspose2d(64, 32, kernel_size=3, stride=2, padding=1, output_padding=1),  # 16x16 -> 32x32
+            nn.BatchNorm2d(32),
+            nn.ReLU(),
+            nn.Conv2d(32, 3, kernel_size=3, stride=1, padding=1),
+            nn.Tanh()
+        )
+    def forward(self, x):
+        x = self.fc(x)
+        x = x.view(-1, 64, 8, 8)
+        x = self.decoder(x)
         return x
 
 # deconv_ResBlock 
