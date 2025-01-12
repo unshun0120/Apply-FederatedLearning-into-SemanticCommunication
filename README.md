@@ -1,3 +1,6 @@
+我還沒做完哈哈  
+![nlnlXD](https://github.com/user-attachments/assets/b68fdf94-ec6e-45d9-907a-4dbd7b70023f)  
+
 **Apply Federated Learning into Semantic Communication**
 ---
 this project is based on :  
