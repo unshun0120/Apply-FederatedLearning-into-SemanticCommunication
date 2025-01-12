@@ -39,9 +39,7 @@ class SemanticCommunicationSystem(nn.Module):  # pure DeepSC
         # semantic decoder
         codeSemantic = self.decoder(codeReceived)
         codeSemantic = self.prediction(codeSemantic)
-        info = self.softmax(codeSemantic)
         
-        #return info
         return codeSemantic, inputs
 
 

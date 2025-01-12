@@ -27,16 +27,25 @@ def FedLol(w, l):
     """
     w_lol = copy.deepcopy(w[0])
     l_lol = copy.deepcopy(l)
+
     # compute sum of loss
-    l_sum = float(0)
+    l_sum = 0.0
     for L in range(1, len(l_lol)) : 
         l_sum += l_lol[L]
+    if l_sum == 0:
+        raise ValueError("Sum of local losses (l_sum) is zero, cannot compute weights.")
+    
     # compute local loss weight
     for i in range(1, len(l_lol)) : 
-        l_lol[i] = ((l_sum-l_lol[i])/l_sum) / (len(l_lol)-1)
+        l_lol[i] = (l_sum-l_lol[i]) / l_sum
+        l_lol[i] /= (len(l_lol)-1)  # Normalization
     # allocate local loss to each layer weight
+    
     for k in w_lol.keys():  
         for i in range(1, len(w)):  
+            # If this line of code is not added, the following error will occur:
+            # RuntimeError: result type Float can't be cast to the desired output type Long
+            w_lol[k] = w_lol[k].float()  # Ensure w_lol[k] is float
             w_lol[k] += w[i][k] * l_lol[i]
     
     return w_lol
@@ -74,13 +83,11 @@ def test_inference(args, model, test_dataset):
     testloader = DataLoader(test_dataset, batch_size=32, shuffle=False)
 
     with torch.no_grad():
-        for batch_idx, (images, labels) in enumerate(tqdm(testloader, colour="blue")):
+        for _, (images, labels) in enumerate(tqdm(testloader, colour="blue")):
             images, labels = images.to(device), labels.to(device)
 
-            # Inference
-            CHANNEL = 'AWGN' 
+            # Inference 
             SNR_TRAIN = torch.randint(0, 28, (images.shape[0], 1)).cuda()
-            CR = 0.1+0.9*torch.rand(images.shape[0], 1).cuda()
             s_predicted, s_origin= model(images, SNR_TRAIN)
             
             # 計算loss時, predicted和origin的shape要相同, 用填充(padding)的方式讓s_origin和s_predicted相同

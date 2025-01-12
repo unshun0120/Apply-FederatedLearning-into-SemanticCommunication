@@ -38,10 +38,6 @@ if __name__ == '__main__':
     train_dataset, test_dataset, user_groups = get_dataset(args)
 
     # Semantic Communication model
-    N_channels = 256
-    Kernel_sz = 5
-    IMG_SIZE = [3, 32, 32]
-    enc_out_shape = [2, IMG_SIZE[1]//4, IMG_SIZE[2]//4]
     global_SCmodel = SemanticCommunicationSystem().cuda()
     # Set the model to train and send it to device(cpu or gpu).
     global_SCmodel.to(device)
@@ -100,9 +96,9 @@ if __name__ == '__main__':
 
         # update global weight strategy
         # Federated Average
-        global_weights = FedAvg(local_weights)
+        #global_weights = FedAvg(local_weights)
         # Federated Local Loss
-        #global_weights = FedLol(local_weights, local_losses)
+        global_weights = FedLol(local_weights, local_losses)
 
         # update global model
         global_SCmodel.load_state_dict(global_weights)

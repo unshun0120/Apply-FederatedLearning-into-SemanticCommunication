@@ -66,14 +66,12 @@ def AWGN_channel(x, snr, P = 1):
 class Decoder(nn.Module):
     def __init__(self, input_dim):
         super(Decoder, self).__init__()
-        
         self.fc = nn.Sequential(
             nn.Linear(input_dim, 512),
             nn.ReLU(),
             nn.Linear(512, 8 * 8 * 64),
             nn.ReLU()
         )
-        
         self.decoder = nn.Sequential(
             # semantic decoder通常使用反卷積或 U-Net 結構還原圖像
             # torch.nn.ConvTranspose2d(): 反卷積, 卷積是把A變成B, 反卷積則是把B變成A
@@ -86,6 +84,7 @@ class Decoder(nn.Module):
             nn.Conv2d(32, 3, kernel_size=3, stride=1, padding=1),
             nn.Tanh()
         )
+
     def forward(self, x):
         x = self.fc(x)
         x = x.view(-1, 64, 8, 8)

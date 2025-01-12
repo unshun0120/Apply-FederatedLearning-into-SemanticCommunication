@@ -59,7 +59,8 @@ class LocalUpdate(object):
         print('\nGlobal Round: {}, {}-th Edge device, Local model ID: {}'.format(global_round+1, curr_user, user_idx))
         for local_epoch in range(self.args.local_ep):
             batch_loss = []
-            for batch_idx, (images, labels) in enumerate(tqdm(self.trainloader, desc="Local Round {} ...".format(local_epoch+1))):
+            # _: batch size
+            for _, (images, labels) in enumerate(tqdm(self.trainloader, desc="Local Round {} ...".format(local_epoch+1))):
                 images, labels = images.to(self.device), labels.to(self.device)
 
                 # model.zero_grad() and optimizer.zero_grad() are the same if all model parameters are in that optimizer
@@ -88,7 +89,6 @@ class LocalUpdate(object):
                 self.logger.add_scalar('loss', loss.item())
                 batch_loss.append(loss.item())
             epoch_loss.append(sum(batch_loss)/len(batch_loss))
-        #print() # 讓畫面好看XD
 
         return model.state_dict(), sum(epoch_loss) / len(epoch_loss)
 
@@ -102,12 +102,10 @@ class LocalUpdate(object):
         total_count, correct_count = 0.0, 0.0
 
         with torch.no_grad():
-            for batch_idx, (images, labels) in enumerate(self.testloader):
+            for _, (images, labels) in enumerate(self.testloader):
                 images, labels = images.to(self.device), labels.to(self.device)
                 # Inference
-                CHANNEL = 'AWGN' 
                 SNR_TRAIN = torch.randint(0, 28, (images.shape[0], 1)).cuda()
-                CR = 0.1+0.9*torch.rand(images.shape[0], 1).cuda()
                 s_predicted, s_origin= model(images, SNR_TRAIN)
 
                 # 計算loss時, predicted和origin的shape要相同, 用填充(padding)的方式讓s_origin和s_predicted相同
