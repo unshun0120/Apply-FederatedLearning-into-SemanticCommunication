@@ -81,7 +81,7 @@ def test_inference(args, model, test_dataset):
             CHANNEL = 'AWGN' 
             SNR_TRAIN = torch.randint(0, 28, (images.shape[0], 1)).cuda()
             CR = 0.1+0.9*torch.rand(images.shape[0], 1).cuda()
-            s_predicted, s_origin= model(images, SNR_TRAIN, CR, CHANNEL)
+            s_predicted, s_origin= model(images, SNR_TRAIN)
             
             # 計算loss時, predicted和origin的shape要相同, 用填充(padding)的方式讓s_origin和s_predicted相同
             padding = (0, s_predicted.shape[3] - s_origin.shape[3])  # 只在最後一維填充

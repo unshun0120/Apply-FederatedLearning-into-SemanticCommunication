@@ -3,7 +3,7 @@ from model_layer import Encoder, dense, AWGN_channel, Decoder
 
 
 class SemanticCommunicationSystem(nn.Module):  # pure DeepSC
-    def __init__(self, enc_shape, Kernel_sz, Nc):
+    def __init__(self):
         super(SemanticCommunicationSystem, self).__init__()
         # model parameter
         semantic_feature_dim = 128
@@ -25,7 +25,7 @@ class SemanticCommunicationSystem(nn.Module):  # pure DeepSC
         self.prediction = nn.Linear(32, 35632)
         self.softmax = nn.Softmax(dim=2)  # dim=2 means that it calculates softmax in the feature dimension
 
-    def forward(self, inputs, snr, cr, channel_type = 'AWGN'):
+    def forward(self, inputs, snr):
         # semantic encoder
         code = self.encoder(inputs)
         # channel encoder

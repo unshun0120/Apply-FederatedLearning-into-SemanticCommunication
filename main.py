@@ -42,7 +42,7 @@ if __name__ == '__main__':
     Kernel_sz = 5
     IMG_SIZE = [3, 32, 32]
     enc_out_shape = [2, IMG_SIZE[1]//4, IMG_SIZE[2]//4]
-    global_SCmodel = SemanticCommunicationSystem(enc_out_shape, Kernel_sz, N_channels).cuda()
+    global_SCmodel = SemanticCommunicationSystem().cuda()
     # Set the model to train and send it to device(cpu or gpu).
     global_SCmodel.to(device)
     # the model is in training mode, enable batch normalization and dropout
