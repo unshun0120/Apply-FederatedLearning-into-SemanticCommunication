@@ -1,4 +1,4 @@
-我好像做出來了哈哈  
+我好像做出來了哈哈 但準確率很低 差低   
 ![nlnlXD](https://github.com/user-attachments/assets/b68fdf94-ec6e-45d9-907a-4dbd7b70023f)  
 
 **Apply Federated Learning into Semantic Communication**
