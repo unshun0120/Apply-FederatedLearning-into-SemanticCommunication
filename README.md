@@ -12,6 +12,7 @@ this project is based on :
 + https://github.com/wyzhang-ustb/Predictive-and-Adaptive-Deep-Coding-for-Wireless-Image-Transmission-in-Semantic-Communication   
 
 ---
+## Before Running  
 1. Create a new folder called **"Dataset"** outside the downloaded folder
 2. Create a new folder called **"logs"** outside the downloaded folder
 3. Create a new folder called **"save"** outside the downloaded folder
